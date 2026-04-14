@@ -25,7 +25,7 @@ jobs:
         with:
           repository: scratchee-engine/game-client
           path: demo-site/game-client
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ secrets.GH_PAT || github.token }}
 
       - name: Write kubeconfig
         run: |
