@@ -32,7 +32,6 @@ COPY --from=demo-builder /app/dist ./dist
 COPY --from=demo-builder /app/server.ts ./
 COPY --from=demo-builder /app/package.json ./
 COPY --from=demo-builder /app/node_modules ./node_modules
-COPY --from=demo-builder /app/public ./public
 
 ENV NODE_ENV=production
 ENV PORT=3000
