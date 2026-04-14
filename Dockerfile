@@ -8,6 +8,7 @@ COPY game-client/package.json ./
 RUN pnpm install
 
 COPY game-client/ ./
+RUN pnpm run prepare
 RUN pnpm run build:lib
 
 FROM node:22-alpine AS demo-builder
