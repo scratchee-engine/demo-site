@@ -38,6 +38,8 @@ jobs:
           echo "${{ secrets.KUBECONFIG_B64 }}" | base64 -d > "$HOME/.kube/config"
           chmod 600 "$HOME/.kube/config"
           # Force skip TLS verify — cluster cert doesn't include k3s-cp.game.scratchee.com in SANs
+          # Remove certificate-authority-data to avoid conflict with insecure flag
+          sed -i '/certificate-authority-data:/d' "$HOME/.kube/config"
           sed -i 's|server: https://k3s-cp|insecure-skip-tls-verify: true\n    server: https://k3s-cp|' "$HOME/.kube/config"
 
       - name: Start registry port-forward
