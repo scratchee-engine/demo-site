@@ -8,7 +8,7 @@ COPY game-client/package.json ./
 RUN pnpm install
 
 COPY game-client/ ./
-RUN pnpm run build
+RUN pnpm run build:lib
 
 FROM node:22-alpine AS demo-builder
 
@@ -18,9 +18,9 @@ COPY demo-site/package.json demo-site/package-lock.json ./
 RUN npm ci
 
 COPY demo-site/ ./
-# Create /game/dist/ structure that vite.config.ts expects
+# Copy game-client library build to where vite.config.ts expects it
 RUN mkdir -p /game/dist
-COPY --from=game-client-builder /game/.svelte-kit/output/client /game/dist/
+COPY --from=game-client-builder /game/dist/game-client.js /game/dist/game-client.js
 RUN npm run build
 
 FROM node:22-alpine
