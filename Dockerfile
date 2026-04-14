@@ -18,7 +18,9 @@ COPY demo-site/package.json demo-site/package-lock.json ./
 RUN npm ci
 
 COPY demo-site/ ./
-COPY --from=game-client-builder /game/.svelte-kit/output/client ./public/game
+# Create /game/dist/ structure that vite.config.ts expects
+RUN mkdir -p /game/dist
+COPY --from=game-client-builder /game/.svelte-kit/output/client /game/dist/
 RUN npm run build
 
 FROM node:22-alpine
