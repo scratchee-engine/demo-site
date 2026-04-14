@@ -15,6 +15,11 @@ jobs:
       IMAGE: scratchee-demo-site
       REGISTRY: localhost:30500
     steps:
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.0'
+
       - name: Checkout demo-site
         uses: actions/checkout@v4
         with:
@@ -37,7 +42,18 @@ jobs:
         run: |
           kubectl port-forward -n kube-system service/registry 30500:5000 &
           echo $! > /tmp/port-forward.pid
-          sleep 5
+
+          # Wait up to 30s for port to be ready
+          for i in {1..30}; do
+            if nc -z localhost 30500; then
+              echo "Port-forward ready after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+
+          # Verify one more time or fail
+          nc -z localhost 30500 || { echo "Port-forward failed to establish"; exit 1; }
 
       - name: Configure insecure registry
         run: |
