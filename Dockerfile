@@ -19,9 +19,9 @@ COPY demo-site/package.json demo-site/package-lock.json ./
 RUN npm ci
 
 COPY demo-site/ ./
-# Copy game-client library build to where vite.config.ts expects it
-RUN mkdir -p /game/dist
-COPY --from=game-client-builder /game/dist/game-client.js /game/dist/game-client.js
+# Copy game-client library build (entire dist) to where vite.config.ts expects it
+RUN mkdir -p /game
+COPY --from=game-client-builder /game/dist /game/dist
 RUN npm run build
 
 FROM node:22-alpine
