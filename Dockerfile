@@ -18,7 +18,7 @@ COPY demo-site/package.json demo-site/package-lock.json ./
 RUN npm ci
 
 COPY demo-site/ ./
-COPY --from=game-client-builder /game/build ./public/game
+COPY --from=game-client-builder /game/.svelte-kit/output/client ./public/game
 RUN npm run build
 
 FROM node:22-alpine
