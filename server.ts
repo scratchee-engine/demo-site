@@ -6,7 +6,7 @@ import { serve } from '@hono/node-server'
 const API_URL = process.env.SCRATCHEE_API_URL ?? 'http://localhost:3000'
 const API_KEY = process.env.SCRATCHEE_API_KEY ?? ''
 const ALLOWED_ORIGIN = process.env.PROXY_ALLOWED_ORIGIN ?? 'http://localhost:5173'
-const PORT = 5175
+const PORT = parseInt(process.env.PORT ?? '5175', 10)
 
 const app = new Hono()
 
@@ -41,6 +41,10 @@ app.post('/proxy/play-token', async (c) => {
     status: upstream.status,
     headers: { 'Content-Type': 'application/json' },
   })
+})
+
+app.get('/proxy/health', (c) => {
+  return c.json({ status: 'ok' })
 })
 
 serve({ fetch: app.fetch, port: PORT }, () => {
