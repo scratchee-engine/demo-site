@@ -1,13 +1,3 @@
-FROM node:22-alpine AS demo-builder
-
-WORKDIR /app
-
-COPY demo-site/package.json demo-site/package-lock.json ./
-RUN npm ci
-
-COPY demo-site/ ./
-RUN npm run build
-
 FROM node:22-alpine AS game-client-builder
 
 WORKDIR /game
@@ -20,6 +10,17 @@ RUN pnpm install
 COPY game-client/ ./
 RUN pnpm run build
 
+FROM node:22-alpine AS demo-builder
+
+WORKDIR /app
+
+COPY demo-site/package.json demo-site/package-lock.json ./
+RUN npm ci
+
+COPY demo-site/ ./
+COPY --from=game-client-builder /game/build ./public/game
+RUN npm run build
+
 FROM node:22-alpine
 
 WORKDIR /app
@@ -28,8 +29,7 @@ COPY --from=demo-builder /app/dist ./dist
 COPY --from=demo-builder /app/server.ts ./
 COPY --from=demo-builder /app/package.json ./
 COPY --from=demo-builder /app/node_modules ./node_modules
-
-COPY --from=game-client-builder /game/build ./public/game
+COPY --from=demo-builder /app/public ./public
 
 ENV NODE_ENV=production
 ENV PORT=3000
