@@ -15,7 +15,7 @@ WORKDIR /game
 RUN npm install -g pnpm@10.33.0
 
 COPY game-client/package.json ./
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 
 COPY game-client/ ./
 RUN pnpm run build
