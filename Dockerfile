@@ -1,4 +1,4 @@
-FROM node:22-alpine AS game-client-builder
+FROM node:22-bookworm-slim AS game-client-builder
 
 WORKDIR /game
 
