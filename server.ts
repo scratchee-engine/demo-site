@@ -2,6 +2,9 @@ import 'dotenv/config'
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { serve } from '@hono/node-server'
+import { serveStatic } from '@hono/node-server/serve-static'
+import { readFileSync } from 'fs'
+import { join } from 'path'
 
 const API_URL = process.env.SCRATCHEE_API_URL ?? 'http://localhost:3000'
 const API_KEY = process.env.SCRATCHEE_API_KEY ?? ''
@@ -47,6 +50,14 @@ app.get('/proxy/health', (c) => {
   return c.json({ status: 'ok' })
 })
 
+app.use('/assets/*', serveStatic({ root: './dist' }))
+app.use('/*', serveStatic({ root: './dist' }))
+
+app.get('/*', (c) => {
+  const html = readFileSync(join(process.cwd(), 'dist', 'index.html'), 'utf-8')
+  return c.html(html)
+})
+
 serve({ fetch: app.fetch, port: PORT }, () => {
-  console.log(`Proxy server running on http://localhost:${PORT}`)
+  console.log(`Demo site server running on http://localhost:${PORT}`)
 })
