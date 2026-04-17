@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { onMounted } from 'vue'
 import { useGameStore } from '../stores/game'
 import { formatCurrency } from '../utils/format'
 
@@ -9,6 +10,10 @@ const artSymbols: Record<string, string> = {
   diamonds: '◆',
   coins: '●',
 }
+
+onMounted(() => {
+  store.loadGames()
+})
 </script>
 
 <template>
@@ -16,15 +21,36 @@ const artSymbols: Record<string, string> = {
     <div class="card-offer">
       <div class="offer-title">Scratch Card</div>
       <div class="offer-subtitle">Match any winning number to win!</div>
+
+      <div v-if="store.availableGames.length > 0" class="game-selector">
+        <label for="game-select" class="game-label">Select a game:</label>
+        <select
+          id="game-select"
+          v-model="store.selectedGameId"
+          class="game-select"
+        >
+          <option
+            v-for="game in store.availableGames"
+            :key="game.id"
+            :value="game.id"
+          >
+            {{ game.name }}
+          </option>
+        </select>
+      </div>
+
       <div class="offer-price">$5.00</div>
       <button
         class="btn-primary"
-        :disabled="store.balance < 5 || store.loading"
+        :disabled="store.balance < 5 || store.loading || !store.selectedGameId"
         @click="store.buyCard()"
       >
         {{ store.loading ? 'Dealing…' : 'Buy Card — $5' }}
       </button>
       <p v-if="store.balance < 5" class="insufficient">Insufficient balance</p>
+      <p v-if="!store.selectedGameId && store.availableGames.length > 0" class="error-msg">
+        Please select a game
+      </p>
       <p v-if="store.error" class="error-msg">{{ store.error }}</p>
     </div>
 
@@ -78,6 +104,37 @@ const artSymbols: Record<string, string> = {
   font-size: 0.9rem;
   color: #6b7280;
   margin-bottom: 16px;
+}
+
+.game-selector {
+  margin-bottom: 16px;
+  text-align: left;
+}
+
+.game-label {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.game-select {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #111827;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.game-select:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
 }
 
 .offer-price {

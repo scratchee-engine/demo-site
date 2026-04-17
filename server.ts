@@ -11,6 +11,9 @@ const API_KEY = process.env.SCRATCHEE_API_KEY ?? ''
 const ALLOWED_ORIGIN = process.env.PROXY_ALLOWED_ORIGIN ?? 'http://localhost:5173'
 const PORT = parseInt(process.env.PORT ?? '5175', 10)
 
+// Parse comma-separated game IDs from env
+const DEMO_GAMES = (process.env.DEMO_GAMES ?? '').split(',').filter(g => g.trim()).map(g => g.trim())
+
 const app = new Hono()
 
 app.use('/proxy/*', cors({ origin: ALLOWED_ORIGIN }))
@@ -43,6 +46,15 @@ app.post('/proxy/play-token', async (c) => {
   return new Response(JSON.stringify(data), {
     status: upstream.status,
     headers: { 'Content-Type': 'application/json' },
+  })
+})
+
+app.get('/proxy/games', (c) => {
+  if (DEMO_GAMES.length === 0) {
+    return c.json({ error: 'No games configured. Set DEMO_GAMES env var.' }, 500)
+  }
+  return c.json({
+    data: DEMO_GAMES.map(id => ({ id, name: `Game ${id.slice(0, 8)}` }))
   })
 })
 

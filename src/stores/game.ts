@@ -15,15 +15,33 @@ export const useGameStore = defineStore('game', () => {
   const history = ref<HistoryEntry[]>([])
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const selectedGameId = ref<string | null>(null)
+  const availableGames = ref<Array<{ id: string; name: string }>>([])
 
-  const GAME_ID = import.meta.env.VITE_GAME_ID as string
+  async function loadGames() {
+    try {
+      const res = await fetch('/proxy/games')
+      if (!res.ok) throw new Error('Failed to load games')
+      const json = await res.json() as { data: Array<{ id: string; name: string }> }
+      availableGames.value = json.data
+      if (json.data.length > 0 && !selectedGameId.value) {
+        selectedGameId.value = json.data[0].id
+      }
+    } catch (e) {
+      error.value = e instanceof Error ? e.message : 'Could not load games'
+    }
+  }
 
   async function buyCard() {
+    if (!selectedGameId.value) {
+      error.value = 'No game selected'
+      return
+    }
     loading.value = true
     error.value = null
     balance.value -= CARD_PRICE
     try {
-      const { serial } = await deal(GAME_ID)
+      const { serial } = await deal(selectedGameId.value)
       currentCard.value = {
         serial,
         playToken: null,
@@ -73,10 +91,14 @@ export const useGameStore = defineStore('game', () => {
   }
 
   async function claimSecondChance() {
+    if (!selectedGameId.value) {
+      error.value = 'No game selected'
+      return
+    }
     loading.value = true
     error.value = null
     try {
-      const { serial } = await deal(GAME_ID)
+      const { serial } = await deal(selectedGameId.value)
       secondChanceUsed.value = true
       currentCard.value = {
         serial,
@@ -108,6 +130,9 @@ export const useGameStore = defineStore('game', () => {
     history,
     loading,
     error,
+    selectedGameId,
+    availableGames,
+    loadGames,
     buyCard,
     startPlay,
     completeCard,
