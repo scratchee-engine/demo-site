@@ -147,25 +147,34 @@ async function forceComplete(
 
     try {
       // 1. Call reveal first (idempotent - safe even if already revealed)
-      await fetch(
+      const revealRes = await fetch(
         `/proxy/reveal/${serial}`,
         { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
       )
+      const revealText = await revealRes.text()
+      console.log('REVEAL:', revealRes.status, revealText)
 
       // 2. Then complete (requires card in revealed state)
-      const res = await fetch(
+      const completeRes = await fetch(
         `/proxy/complete/${serial}`,
         { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
       )
-      if (!res.ok) return null
-      const json = await res.json()
+      const completeText = await completeRes.text()
+      console.log('COMPLETE:', completeRes.status, completeText)
+
+      if (!completeRes.ok) {
+        console.error('Complete failed:', completeRes.status, completeText)
+        return null
+      }
+      const json = JSON.parse(completeText)
       const data = json.data ?? json
       return {
         won: data.is_winner ?? false,
         prizeAmountCents: data.prize_amount_cents ?? 0,
         prizeTierName: data.prize_tier_name ?? null
       }
-    } catch {
+    } catch (err) {
+      console.error('forceComplete error:', err)
       return null
     }
   })
