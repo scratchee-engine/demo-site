@@ -146,6 +146,13 @@ async function forceComplete(
     if (!serial || !token) return null
 
     try {
+      // 1. Call reveal first (idempotent - safe even if already revealed)
+      await fetch(
+        `/proxy/reveal/${serial}`,
+        { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
+      )
+
+      // 2. Then complete (requires card in revealed state)
       const res = await fetch(
         `/proxy/complete/${serial}`,
         { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
