@@ -5,7 +5,7 @@ import { useGameStore } from '../stores/game'
 import GameClient from '@scratchee/game-client'
 import type { CompleteResult } from '@scratchee/game-client'
 
-const SCRATCHEE_API_URL = import.meta.env.VITE_SCRATCHEE_API_URL ?? 'http://localhost:3000'
+const SCRATCHEE_API_URL = import.meta.env.VITE_SCRATCHEE_API_URL ?? ''
 
 const store = useGameStore()
 const containerRef = ref<HTMLElement | null>(null)
