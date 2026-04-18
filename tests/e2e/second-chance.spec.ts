@@ -20,13 +20,11 @@ test.describe('Second Chance Cards', () => {
       const result = await playToResult(page, test.info())
 
       if (!result.won) {
-        await expect(page.locator('.second-chance-offer')).toBeVisible()
-        await expect(page.locator('.sc-badge')).toContainText('FREE SECOND CHANCE')
-        await expect(page.locator('.sc-text')).toContainText('free re-deal')
+        await expect(page.getByText('FREE SECOND CHANCE')).toBeVisible()
+        await expect(page.getByText(/free re-deal/)).toBeVisible()
 
-        const claimBtn = page.locator('.second-chance-offer .btn-primary')
+        const claimBtn = page.getByRole('button', { name: /Claim Free Card/ })
         await expect(claimBtn).toBeVisible()
-        await expect(claimBtn).toContainText('Claim Free Card')
         return
       }
 
@@ -46,19 +44,20 @@ test.describe('Second Chance Cards', () => {
       if (!result.won) {
         const balanceBefore = await getBalance(page)
 
-        await page.locator('.second-chance-offer .btn-primary').click()
+        await page.getByRole('button', { name: /Claim Free Card/ }).click()
 
-        await expect(page.locator('.deal')).toBeVisible({ timeout: 10_000 })
-        await expect(page.locator('.deal-title.second-chance')).toBeVisible()
-        await expect(page.locator('.deal-title.second-chance')).toHaveText('Your Free Second Chance')
+        await expect(
+          page.getByRole('heading', { name: 'Your Free Second Chance' })
+        ).toBeVisible({ timeout: 10_000 })
 
         expect(await getBalance(page), 'Balance must not decrease for free card').toBeCloseTo(
           balanceBefore, 2
         )
 
-        await expect(page.locator('.ready-badge')).toBeVisible({ timeout: 5_000 })
-        const serial = await page.locator('.serial-line code').textContent()
-        expect(serial, 'Second chance card must have a serial').toBeTruthy()
+        await expect(page.getByText('Card ready')).toBeVisible({ timeout: 5_000 })
+
+        const serialLine = await page.getByText(/Serial:/).textContent()
+        expect(serialLine, 'Second chance card must have a serial').toBeTruthy()
         return
       }
 
@@ -78,9 +77,11 @@ test.describe('Second Chance Cards', () => {
       if (!result.won) {
         const balanceBefore = await getBalance(page)
 
-        await page.locator('.second-chance-offer .btn-primary').click()
-        await expect(page.locator('.deal')).toBeVisible({ timeout: 10_000 })
-        await expect(page.locator('.ready-badge')).toBeVisible({ timeout: 5_000 })
+        await page.getByRole('button', { name: /Claim Free Card/ }).click()
+        await expect(
+          page.getByRole('heading', { name: 'Your Free Second Chance' })
+        ).toBeVisible({ timeout: 10_000 })
+        await expect(page.getByText('Card ready')).toBeVisible({ timeout: 5_000 })
 
         const scResult = await playToResult(page, test.info())
         const balanceAfter = await getBalance(page)
@@ -89,10 +90,10 @@ test.describe('Second Chance Cards', () => {
           expect(balanceAfter).toBeCloseTo(
             balanceBefore + scResult.prizeAmountCents / 100, 2
           )
-          await expect(page.locator('.result-win')).toBeVisible()
+          await expect(page.getByRole('heading', { name: 'You Won!' })).toBeVisible()
         } else {
           expect(balanceAfter).toBeCloseTo(balanceBefore, 2)
-          await expect(page.locator('.result-loss')).toBeVisible()
+          await expect(page.getByRole('heading', { name: 'No prize this time' })).toBeVisible()
         }
         return
       }
@@ -113,19 +114,20 @@ test.describe('Second Chance Cards', () => {
       const result = await playToResult(page, test.info())
 
       if (!result.won && !usedSC) {
-        await expect(page.locator('.second-chance-offer')).toBeVisible()
-        await page.locator('.second-chance-offer .btn-primary').click()
+        await expect(page.getByText('FREE SECOND CHANCE')).toBeVisible()
+        await page.getByRole('button', { name: /Claim Free Card/ }).click()
 
-        await expect(page.locator('.deal')).toBeVisible({ timeout: 10_000 })
-        await expect(page.locator('.ready-badge')).toBeVisible({ timeout: 5_000 })
+        await expect(
+          page.getByRole('heading', { name: 'Your Free Second Chance' })
+        ).toBeVisible({ timeout: 10_000 })
+        await expect(page.getByText('Card ready')).toBeVisible({ timeout: 5_000 })
 
         const scResult = await playToResult(page, test.info())
         usedSC = true
 
         if (!scResult.won) {
-          await expect(page.locator('.second-chance-offer')).not.toBeVisible()
-          await expect(page.locator('.no-more')).toBeVisible()
-          await expect(page.locator('.no-more')).toHaveText('No more free cards this session.')
+          await expect(page.getByText('FREE SECOND CHANCE')).not.toBeVisible()
+          await expect(page.getByText('No more free cards this session.')).toBeVisible()
           return
         }
 
@@ -134,8 +136,8 @@ test.describe('Second Chance Cards', () => {
       }
 
       if (!result.won && usedSC) {
-        await expect(page.locator('.second-chance-offer')).not.toBeVisible()
-        await expect(page.locator('.no-more')).toBeVisible()
+        await expect(page.getByText('FREE SECOND CHANCE')).not.toBeVisible()
+        await expect(page.getByText('No more free cards this session.')).toBeVisible()
         return
       }
 
@@ -155,14 +157,13 @@ test.describe('Second Chance Cards', () => {
       const result = await playToResult(page, test.info())
 
       if (!result.won) {
-        await expect(page.locator('.second-chance-offer')).toBeVisible()
+        await expect(page.getByText('FREE SECOND CHANCE')).toBeVisible()
 
-        const skipBtn = page.locator('.btn-secondary.skip')
+        const skipBtn = page.getByRole('button', { name: /Skip.*Back to Lobby/i })
         await expect(skipBtn).toBeVisible()
-        await expect(skipBtn).toContainText('Skip, Back to Lobby')
         await skipBtn.click()
 
-        await expect(page.locator('.card-offer')).toBeVisible({ timeout: 5_000 })
+        await expect(page.getByRole('button', { name: /Buy Card/ })).toBeVisible({ timeout: 5_000 })
 
         for (let j = 0; j < 20; j++) {
           if ((await getBalance(page)) < CARD_PRICE) break
@@ -172,7 +173,7 @@ test.describe('Second Chance Cards', () => {
 
           if (!result2.won) {
             await expect(
-              page.locator('.second-chance-offer'),
+              page.getByText('FREE SECOND CHANCE'),
               'Second chance should still be available after skip'
             ).toBeVisible()
             return
@@ -194,7 +195,7 @@ test.describe('Second Chance Cards', () => {
     test.fail(true, 'Could not trigger any losses')
   })
 
-  test('loss result "Back to Lobby" button text changes after second chance used', async ({ page }) => {
+  test('back button text changes after second chance used', async ({ page }) => {
     for (let i = 0; i < 20; i++) {
       if ((await getBalance(page)) < CARD_PRICE) break
 
@@ -202,19 +203,21 @@ test.describe('Second Chance Cards', () => {
       const result = await playToResult(page, test.info())
 
       if (!result.won) {
-        const backBtnBefore = page.locator('.btn-secondary.skip')
-        await expect(backBtnBefore).toContainText('Skip, Back to Lobby')
+        await expect(page.getByRole('button', { name: /Skip.*Back to Lobby/i })).toBeVisible()
 
-        await page.locator('.second-chance-offer .btn-primary').click()
-        await expect(page.locator('.deal')).toBeVisible({ timeout: 10_000 })
-        await expect(page.locator('.ready-badge')).toBeVisible({ timeout: 5_000 })
+        await page.getByRole('button', { name: /Claim Free Card/ }).click()
+        await expect(
+          page.getByRole('heading', { name: 'Your Free Second Chance' })
+        ).toBeVisible({ timeout: 10_000 })
+        await expect(page.getByText('Card ready')).toBeVisible({ timeout: 5_000 })
 
         const scResult = await playToResult(page, test.info())
 
         if (!scResult.won) {
-          const backBtnAfter = page.locator('.btn-secondary')
-          await expect(backBtnAfter).toContainText('Back to Lobby')
-          await expect(backBtnAfter).not.toContainText('Skip')
+          const backBtn = page.getByRole('button', { name: /Back to Lobby/i })
+          await expect(backBtn).toBeVisible()
+          const btnText = await backBtn.textContent()
+          expect(btnText).not.toMatch(/Skip/)
           return
         }
 

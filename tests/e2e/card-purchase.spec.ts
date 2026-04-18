@@ -37,7 +37,7 @@ test.describe('Card Purchase — dealing and balance', () => {
 
   test('header balance updates immediately on purchase', async ({ page }) => {
     await buyCard(page)
-    await expect(page.locator('.balance-amount')).toHaveText('$45.00')
+    expect(await getBalance(page)).toBeCloseTo(STARTING_BALANCE - CARD_PRICE, 2)
   })
 
   test('deal failure refunds balance', async ({ page }) => {
@@ -50,9 +50,9 @@ test.describe('Card Purchase — dealing and balance', () => {
     )
 
     const before = await getBalance(page)
-    await page.locator('.btn-primary').click()
+    await page.getByRole('button', { name: /Buy Card/ }).click()
 
-    await expect(page.locator('.error-msg')).toBeVisible({ timeout: 5_000 })
+    await expect(page.getByText(/failed|error/i)).toBeVisible({ timeout: 5_000 })
     expect(await getBalance(page)).toBeCloseTo(before, 2)
   })
 
@@ -63,10 +63,9 @@ test.describe('Card Purchase — dealing and balance', () => {
       if (store) store.balance = 3
     })
 
-    await expect(page.locator('.balance-amount')).toHaveText('$3.00')
-    await expect(page.locator('.btn-primary')).toBeDisabled()
-    await expect(page.locator('.insufficient')).toBeVisible()
-    await expect(page.locator('.insufficient')).toHaveText('Insufficient balance')
+    expect(await getBalance(page)).toBeCloseTo(3, 2)
+    await expect(page.getByRole('button', { name: /Buy Card/ })).toBeDisabled()
+    await expect(page.getByText('Insufficient balance')).toBeVisible()
   })
 })
 
@@ -100,8 +99,8 @@ test.describe('Sequential card allocation', () => {
       if (currRoll === prevRoll) {
         expect(currCard, `Card ${i + 1} should follow card ${i} within same roll`).toBe(prevCard + 1)
       } else {
-        expect(currRoll, `Roll should increment when card position resets`).toBe(prevRoll + 1)
-        expect(currCard, `First card in new roll should be position 1`).toBe(1)
+        expect(currRoll, 'Roll should increment when card position resets').toBe(prevRoll + 1)
+        expect(currCard, 'First card in new roll should be position 1').toBe(1)
       }
     }
   })

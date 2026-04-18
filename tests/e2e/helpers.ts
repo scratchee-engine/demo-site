@@ -4,9 +4,11 @@ export const CARD_PRICE = 5
 export const STARTING_BALANCE = 50
 
 export async function getBalance(page: Page): Promise<number> {
-  const text = await page.locator('.balance-amount').textContent()
-  if (!text) throw new Error('Could not read balance from .balance-amount')
-  return parseFloat(text.replace('$', ''))
+  const header = page.locator('header')
+  const text = await header.textContent()
+  const match = text?.match(/\$(\d+\.\d{2})/)
+  if (!match) throw new Error(`Could not parse balance from header: "${text}"`)
+  return parseFloat(match[1])
 }
 
 export async function waitForGames(page: Page): Promise<void> {
@@ -17,31 +19,42 @@ export async function waitForGames(page: Page): Promise<void> {
 }
 
 export async function buyCard(page: Page): Promise<string> {
-  const btn = page.locator('.btn-primary')
-  await expect(btn).toBeEnabled({ timeout: 5_000 })
-  await btn.click()
+  const buyBtn = page.getByRole('button', { name: /Buy Card/ })
+  await expect(buyBtn).toBeEnabled({ timeout: 5_000 })
+  await buyBtn.click()
 
-  await expect(page.locator('.deal')).toBeVisible({ timeout: 10_000 })
-  await expect(page.locator('.ready-badge')).toBeVisible({ timeout: 5_000 })
+  const heading = page.getByRole('heading', { name: 'Your Card' })
+  try {
+    await expect(heading).toBeVisible({ timeout: 10_000 })
+  } catch {
+    const errEl = page.getByText(/failed|error/i)
+    if (await errEl.isVisible({ timeout: 1_000 }).catch(() => false)) {
+      throw new Error(`Deal failed: ${await errEl.textContent()}`)
+    }
+    throw new Error('Deal phase did not appear — heading "Your Card" not found in DOM')
+  }
 
-  const serial = await page.locator('.serial-line code').textContent()
-  expect(serial, 'Card serial must be displayed after deal').toBeTruthy()
-  return serial!.trim()
+  await expect(page.getByText('Card ready')).toBeVisible({ timeout: 5_000 })
+
+  const serialLine = await page.getByText(/Serial:/).textContent()
+  const match = serialLine?.match(/Serial:\s*(.+)/)
+  if (!match) throw new Error(`Could not extract serial from: ${serialLine}`)
+  return match[1].trim()
 }
 
 export async function playToResult(
   page: Page,
   testInfo?: TestInfo
 ): Promise<{ won: boolean; prizeAmountCents: number; prizeTierName: string | null }> {
-  await expect(page.locator('.ready-badge')).toBeVisible()
+  await expect(page.getByText('Card ready')).toBeVisible()
 
   const revealPromise = page.waitForResponse(
     r => r.url().includes('/api/play/reveal/') && r.status() === 200,
     { timeout: 20_000 }
   )
 
-  await page.locator('.btn-primary').click()
-  await expect(page.locator('.play')).toBeVisible({ timeout: 10_000 })
+  await page.getByRole('button', { name: /Play Card/ }).click()
+  await expect(page.getByText('Scratch your card')).toBeVisible({ timeout: 10_000 })
 
   const revealResp = await revealPromise
   const revealJson = await revealResp.json()
@@ -57,8 +70,9 @@ export async function playToResult(
   const completeResp = await completePromise
 
   if (completeResp && completeResp.status() === 200) {
-    const d = (await completeResp.json()).data ?? (await completeResp.json())
-    await expect(page.locator('.result')).toBeVisible({ timeout: 10_000 })
+    const json = await completeResp.json()
+    const d = json.data ?? json
+    await waitForResult(page)
     return {
       won: d.is_winner ?? false,
       prizeAmountCents: d.prize_amount_cents ?? 0,
@@ -73,8 +87,14 @@ export async function playToResult(
 
   const outcome = extractOutcome(revealData)
   await forceComplete(page, outcome)
-  await expect(page.locator('.result')).toBeVisible({ timeout: 10_000 })
+  await waitForResult(page)
   return outcome
+}
+
+async function waitForResult(page: Page): Promise<void> {
+  await expect(
+    page.getByRole('heading', { name: /You Won!|No prize this time/ })
+  ).toBeVisible({ timeout: 10_000 })
 }
 
 function extractOutcome(d: Record<string, unknown>): {
@@ -143,10 +163,10 @@ async function forceComplete(
 }
 
 export async function goBackToLobby(page: Page): Promise<void> {
-  const btn = page.locator('button').filter({ hasText: /back to lobby/i })
+  const btn = page.getByRole('button', { name: /Back to Lobby/i })
   await expect(btn).toBeVisible({ timeout: 5_000 })
   await btn.click()
-  await expect(page.locator('.card-offer')).toBeVisible({ timeout: 5_000 })
+  await expect(page.getByRole('button', { name: /Buy Card/ })).toBeVisible({ timeout: 5_000 })
 }
 
 export async function fullPlayCycle(

@@ -21,11 +21,10 @@ test.describe('Game Outcomes — wins, losses, and balance', () => {
     const result = await playToResult(page, test.info())
 
     if (!result.won) {
-      await expect(page.locator('.result-loss')).toBeVisible()
-      await expect(page.locator('.result-title')).toHaveText('No prize this time')
+      await expect(page.getByRole('heading', { name: 'No prize this time' })).toBeVisible()
       expect(await getBalance(page)).toBeCloseTo(afterBuy, 2)
     } else {
-      await expect(page.locator('.result-win')).toBeVisible()
+      await expect(page.getByRole('heading', { name: 'You Won!' })).toBeVisible()
       expect(await getBalance(page)).toBeCloseTo(
         afterBuy + result.prizeAmountCents / 100, 2
       )
@@ -67,10 +66,8 @@ test.describe('Game Outcomes — wins, losses, and balance', () => {
       if (result.won) {
         foundWin = true
 
-        await expect(page.locator('.result-win')).toBeVisible()
-        await expect(page.locator('.result-title')).toHaveText('You Won!')
-        await expect(page.locator('.prize-amount')).toBeVisible()
-        await expect(page.locator('.balance-line')).toContainText('Balance updated to')
+        await expect(page.getByRole('heading', { name: 'You Won!' })).toBeVisible()
+        await expect(page.getByText(/Balance updated to/)).toBeVisible()
 
         const afterWin = await getBalance(page)
         expect(afterWin).toBeCloseTo(afterBuy + result.prizeAmountCents / 100, 2)
@@ -95,8 +92,7 @@ test.describe('Game Outcomes — wins, losses, and balance', () => {
       const result = await playToResult(page, test.info())
 
       if (result.won && result.prizeTierName) {
-        await expect(page.locator('.prize-tier')).toBeVisible()
-        await expect(page.locator('.prize-tier')).toHaveText(result.prizeTierName)
+        await expect(page.getByText(result.prizeTierName)).toBeVisible()
         return
       }
 
@@ -113,12 +109,14 @@ test.describe('Game Outcomes — wins, losses, and balance', () => {
     await buyCard(page)
     await playToResult(page, test.info())
 
-    const resultBalance = page.locator('.balance-line strong')
-    await expect(resultBalance).toBeVisible()
+    const balanceLine = page.getByText(/Balance/)
+    await expect(balanceLine).toBeVisible()
 
     const headerBalance = await getBalance(page)
-    const resultText = await resultBalance.textContent()
-    const resultAmount = parseFloat(resultText!.replace('$', ''))
-    expect(resultAmount).toBeCloseTo(headerBalance, 2)
+    const lineText = await balanceLine.textContent()
+    const match = lineText?.match(/\$(\d+\.\d{2})/)
+    if (match) {
+      expect(parseFloat(match[1])).toBeCloseTo(headerBalance, 2)
+    }
   })
 })

@@ -23,11 +23,11 @@ test.describe('Edge Cases', () => {
     await waitForGames(page)
 
     await buyCard(page)
-    await expect(page.locator('.deal')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Your Card' })).toBeVisible()
 
     await page.reload()
 
-    await expect(page.locator('.card-offer')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('button', { name: /Buy Card/ })).toBeVisible({ timeout: 10_000 })
     expect(await getBalance(page)).toBe(STARTING_BALANCE)
   })
 
@@ -42,12 +42,12 @@ test.describe('Edge Cases', () => {
       { timeout: 20_000 }
     ).catch(() => null)
 
-    await page.locator('.btn-primary').click()
-    await expect(page.locator('.play')).toBeVisible({ timeout: 10_000 })
+    await page.getByRole('button', { name: /Play Card/ }).click()
+    await expect(page.getByText('Scratch your card')).toBeVisible({ timeout: 10_000 })
 
     await page.reload()
 
-    await expect(page.locator('.card-offer')).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('button', { name: /Buy Card/ })).toBeVisible({ timeout: 10_000 })
     expect(await getBalance(page)).toBe(STARTING_BALANCE)
   })
 
@@ -56,10 +56,10 @@ test.describe('Edge Cases', () => {
     await waitForGames(page)
 
     await buyCard(page)
-    await expect(page.locator('.deal')).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Your Card' })).toBeVisible()
 
-    await page.locator('.back-link').click()
-    await expect(page.locator('.card-offer')).toBeVisible({ timeout: 5_000 })
+    await page.getByRole('button', { name: '← Back' }).click()
+    await expect(page.getByRole('button', { name: /Buy Card/ })).toBeVisible({ timeout: 5_000 })
   })
 
   test('play-token proxy rejects invalid serial', async ({ request }) => {
@@ -101,8 +101,8 @@ test.describe('Edge Cases', () => {
       })
     )
 
-    await page.locator('.btn-primary').click()
-    await expect(page.locator('.error-msg')).toBeVisible({ timeout: 5_000 })
+    await page.getByRole('button', { name: /Buy Card/ }).click()
+    await expect(page.getByText(/failed|error/i)).toBeVisible({ timeout: 5_000 })
   })
 
   test('loading state shown while dealing', async ({ page }) => {
@@ -114,22 +114,22 @@ test.describe('Edge Cases', () => {
       await route.continue()
     })
 
-    const btn = page.locator('.btn-primary')
+    const btn = page.getByRole('button', { name: /Buy Card/ })
     await btn.click()
 
-    await expect(btn).toContainText('Dealing')
-    await expect(btn).toBeDisabled()
+    await expect(page.getByRole('button', { name: /Dealing/ })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Dealing/ })).toBeDisabled()
   })
 
   test('balance formats correctly for edge amounts', async ({ page }) => {
     await page.goto('/')
 
-    await expect(page.locator('.balance-amount')).toHaveText('$50.00')
+    expect(await getBalance(page)).toBe(STARTING_BALANCE)
 
     for (const [input, expected] of [
-      [0, '$0.00'],
-      [100.5, '$100.50'],
-      [0.01, '$0.01'],
+      [0, 0],
+      [100.5, 100.5],
+      [0.01, 0.01],
     ] as const) {
       await page.evaluate((val) => {
         const appEl = document.querySelector('#app') as any
@@ -137,11 +137,11 @@ test.describe('Edge Cases', () => {
         if (store) store.balance = val
       }, input)
 
-      await expect(page.locator('.balance-amount')).toHaveText(expected)
+      expect(await getBalance(page)).toBeCloseTo(expected, 2)
     }
   })
 
-  test('no game selected shows appropriate message', async ({ page }) => {
+  test('no game selected disables buy button', async ({ page }) => {
     await page.goto('/')
 
     const gamesRes = await page.request.get('/proxy/games')
@@ -154,7 +154,7 @@ test.describe('Edge Cases', () => {
         if (store) store.selectedGameId = null
       })
 
-      await expect(page.locator('.btn-primary')).toBeDisabled()
+      await expect(page.getByRole('button', { name: /Buy Card/ })).toBeDisabled()
     }
   })
 })
