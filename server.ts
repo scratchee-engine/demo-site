@@ -87,6 +87,44 @@ app.post('/proxy/complete/:serial', async (c) => {
   })
 })
 
+app.post('/api/play/reveal/:serial', async (c) => {
+  const serial = c.req.param('serial')
+  const authHeader = c.req.header('Authorization')
+  if (!authHeader) {
+    return c.json({ error: { code: 'UNAUTHORIZED', message: 'Missing Authorization header' } }, 401)
+  }
+  const upstream = await fetch(`${API_URL}/api/play/reveal/${serial}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': authHeader,
+    },
+  })
+  const data = await upstream.json()
+  return new Response(JSON.stringify(data), {
+    status: upstream.status,
+    headers: { 'Content-Type': 'application/json' },
+  })
+})
+
+app.post('/api/play/complete/:serial', async (c) => {
+  const serial = c.req.param('serial')
+  const authHeader = c.req.header('Authorization')
+  if (!authHeader) {
+    return c.json({ error: { code: 'UNAUTHORIZED', message: 'Missing Authorization header' } }, 401)
+  }
+  const upstream = await fetch(`${API_URL}/api/play/complete/${serial}`, {
+    method: 'POST',
+    headers: {
+      'Authorization': authHeader,
+    },
+  })
+  const data = await upstream.json()
+  return new Response(JSON.stringify(data), {
+    status: upstream.status,
+    headers: { 'Content-Type': 'application/json' },
+  })
+})
+
 app.get('/proxy/games', (c) => {
   if (DEMO_GAMES.length === 0) {
     return c.json({ error: 'No games configured. Set DEMO_GAMES env var.' }, 500)
