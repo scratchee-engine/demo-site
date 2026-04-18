@@ -146,7 +146,7 @@ async function forceComplete(
     if (serial && token) {
       try {
         await fetch(
-          `https://test-api.game.scratchee.com/api/play/complete/${serial}`,
+          `/proxy/complete/${serial}`,
           { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
         )
       } catch { /* best-effort */ }
