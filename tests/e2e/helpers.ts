@@ -136,58 +136,65 @@ async function forceComplete(
   page: Page,
   outcome: { won: boolean; prizeAmountCents: number; prizeTierName: string | null }
 ): Promise<void> {
-  const result = await page.evaluate(async () => {
+  // Extract serial and token from Vue store
+  const { serial, token } = await page.evaluate(() => {
     const appEl = document.querySelector('#app') as any
     const app = appEl?.__vue_app__
     const pinia = app?.config?.globalProperties?.$pinia
     const store = pinia?._s?.get('game')
-    const serial = store?.currentCard?.serial
-    const token = store?.currentCard?.playToken
-    if (!serial || !token) return null
-
-    try {
-      // 1. Call reveal first (idempotent - safe even if already revealed)
-      const revealRes = await fetch(
-        `/proxy/reveal/${serial}`,
-        { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
-      )
-      const revealText = await revealRes.text()
-      console.log('REVEAL:', revealRes.status, revealText)
-
-      // 2. Then complete (requires card in revealed state)
-      const completeRes = await fetch(
-        `/proxy/complete/${serial}`,
-        { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
-      )
-      const completeText = await completeRes.text()
-      console.log('COMPLETE:', completeRes.status, completeText)
-
-      if (!completeRes.ok) {
-        console.error('Complete failed:', completeRes.status, completeText)
-        return null
-      }
-      const json = JSON.parse(completeText)
-      const data = json.data ?? json
-      return {
-        won: data.is_winner ?? false,
-        prizeAmountCents: data.prize_amount_cents ?? 0,
-        prizeTierName: data.prize_tier_name ?? null
-      }
-    } catch (err) {
-      console.error('forceComplete error:', err)
-      return null
+    return {
+      serial: store?.currentCard?.serial ?? null,
+      token: store?.currentCard?.playToken ?? null
     }
   })
 
-  await page.evaluate((r) => {
-    const appEl = document.querySelector('#app') as any
-    const app = appEl?.__vue_app__
-    const pinia = app?.config?.globalProperties?.$pinia
-    const store = pinia?._s?.get('game')
-    if (r) {
-      store?.completeCard?.(r.won, r.prizeAmountCents, r.prizeTierName)
+  if (!serial || !token) {
+    console.error('forceComplete: no serial or token')
+    return
+  }
+
+  const request = page.context().request
+  const baseURL = page.url().match(/^https?:\/\/[^/]+/)?.[0] || ''
+
+  try {
+    // 1. Call reveal first (idempotent - safe even if already revealed)
+    const revealRes = await request.post(`${baseURL}/proxy/reveal/${serial}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    const revealText = await revealRes.text()
+    console.log('REVEAL:', revealRes.status(), revealText)
+
+    // 2. Then complete (requires card in revealed state)
+    const completeRes = await request.post(`${baseURL}/proxy/complete/${serial}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+    const completeText = await completeRes.text()
+    console.log('COMPLETE:', completeRes.status(), completeText)
+
+    if (!completeRes.ok()) {
+      console.error('Complete failed:', completeRes.status(), completeText)
+      return
     }
-  }, result)
+
+    const json = JSON.parse(completeText)
+    const data = json.data ?? json
+    const result = {
+      won: data.is_winner ?? false,
+      prizeAmountCents: data.prize_amount_cents ?? 0,
+      prizeTierName: data.prize_tier_name ?? null
+    }
+
+    // 3. Update Vue store with result
+    await page.evaluate((r) => {
+      const appEl = document.querySelector('#app') as any
+      const app = appEl?.__vue_app__
+      const pinia = app?.config?.globalProperties?.$pinia
+      const store = pinia?._s?.get('game')
+      store?.completeCard?.(r.won, r.prizeAmountCents, r.prizeTierName)
+    }, result)
+  } catch (err) {
+    console.error('forceComplete error:', err)
+  }
 }
 
 export async function goBackToLobby(page: Page): Promise<void> {
