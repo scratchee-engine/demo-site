@@ -49,7 +49,7 @@ export async function playToResult(
   await expect(page.getByText('Card ready')).toBeVisible()
 
   const revealPromise = page.waitForResponse(
-    r => r.url().includes('/api/play/reveal/') && r.status() === 200,
+    r => (r.url().includes('/proxy/reveal/') || r.url().includes('/api/play/reveal/')) && r.status() === 200,
     { timeout: 20_000 }
   )
 
@@ -61,7 +61,7 @@ export async function playToResult(
   const revealData = revealJson.data ?? revealJson
 
   const completePromise = page.waitForResponse(
-    r => r.url().includes('/api/play/complete/'),
+    r => r.url().includes('/proxy/complete/') || r.url().includes('/api/play/complete/'),
     { timeout: 25_000 }
   ).catch(() => null)
 
