@@ -136,30 +136,42 @@ async function forceComplete(
   page: Page,
   outcome: { won: boolean; prizeAmountCents: number; prizeTierName: string | null }
 ): Promise<void> {
-  await page.evaluate(async () => {
+  const result = await page.evaluate(async () => {
     const appEl = document.querySelector('#app') as any
     const app = appEl?.__vue_app__
     const pinia = app?.config?.globalProperties?.$pinia
     const store = pinia?._s?.get('game')
     const serial = store?.currentCard?.serial
     const token = store?.currentCard?.playToken
-    if (serial && token) {
-      try {
-        await fetch(
-          `/proxy/complete/${serial}`,
-          { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
-        )
-      } catch { /* best-effort */ }
+    if (!serial || !token) return null
+
+    try {
+      const res = await fetch(
+        `/proxy/complete/${serial}`,
+        { method: 'POST', headers: { Authorization: `Bearer ${token}` } }
+      )
+      if (!res.ok) return null
+      const json = await res.json()
+      const data = json.data ?? json
+      return {
+        won: data.is_winner ?? false,
+        prizeAmountCents: data.prize_amount_cents ?? 0,
+        prizeTierName: data.prize_tier_name ?? null
+      }
+    } catch {
+      return null
     }
   })
 
-  await page.evaluate((o) => {
+  await page.evaluate((r) => {
     const appEl = document.querySelector('#app') as any
     const app = appEl?.__vue_app__
     const pinia = app?.config?.globalProperties?.$pinia
     const store = pinia?._s?.get('game')
-    store?.completeCard?.(o.won, o.prizeAmountCents, o.prizeTierName)
-  }, outcome)
+    if (r) {
+      store?.completeCard?.(r.won, r.prizeAmountCents, r.prizeTierName)
+    }
+  }, result)
 }
 
 export async function goBackToLobby(page: Page): Promise<void> {
