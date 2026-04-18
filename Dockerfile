@@ -20,8 +20,8 @@ RUN npm ci
 
 COPY demo-site/ ./
 # Copy game-client library build (entire dist) to where vite.config.ts expects it
-RUN mkdir -p /game
-COPY --from=game-client-builder /game/dist /game/dist
+RUN mkdir -p /game-client
+COPY --from=game-client-builder /game/dist /game-client/dist
 RUN npm run build
 
 FROM node:22-alpine
