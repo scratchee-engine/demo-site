@@ -39,3 +39,15 @@ export async function getPlayToken(cardSerial: string): Promise<{ token: string 
   const json = await res.json() as { data: { token: string } }
   return { token: json.data.token }
 }
+
+export async function revealCard(cardSerial: string, playToken: string): Promise<any> {
+  const res = await fetch(`/proxy/reveal/${cardSerial}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${playToken}`,
+    },
+  })
+  if (!res.ok) throw new Error(`Reveal failed (${res.status})`)
+  return await res.json()
+}

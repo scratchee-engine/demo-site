@@ -8,6 +8,7 @@ export interface CardModifiers {
 export interface CurrentCard {
   serial: string
   playToken: string | null
+  cardData: any | null
   modifiers: CardModifiers
   isSecondChance: boolean
 }

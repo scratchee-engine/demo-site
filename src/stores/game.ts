@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { Phase, CurrentCard, HistoryEntry, GameResult } from '../types'
-import { deal, getPlayToken, randomModifiers } from '../api/client'
+import { deal, getPlayToken, revealCard, randomModifiers } from '../api/client'
 
 const STARTING_BALANCE = 50
 const CARD_PRICE = 5
@@ -45,6 +45,7 @@ export const useGameStore = defineStore('game', () => {
       currentCard.value = {
         serial,
         playToken: null,
+        cardData: null,
         modifiers: randomModifiers(),
         isSecondChance: false,
       }
@@ -63,7 +64,8 @@ export const useGameStore = defineStore('game', () => {
     error.value = null
     try {
       const { token } = await getPlayToken(currentCard.value.serial)
-      currentCard.value = { ...currentCard.value, playToken: token }
+      const cardData = await revealCard(currentCard.value.serial, token)
+      currentCard.value = { ...currentCard.value, playToken: token, cardData }
       phase.value = 'play'
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Could not start game. Try again.'
@@ -103,6 +105,7 @@ export const useGameStore = defineStore('game', () => {
       currentCard.value = {
         serial,
         playToken: null,
+        cardData: null,
         modifiers: randomModifiers(),
         isSecondChance: true,
       }

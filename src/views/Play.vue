@@ -24,12 +24,13 @@ function handleComplete(result: CompleteResult) {
 
 onMounted(() => {
   const card = store.currentCard
-  if (!containerRef.value || !card || !card.playToken) return
+  if (!containerRef.value || !card || !card.playToken || !card.cardData) return
   svelteApp = mount(GameClient, {
     target: containerRef.value,
     props: {
       serial: card.serial,
       token: card.playToken,
+      cardData: card.cardData,
       api: SCRATCHEE_API_URL,
       onComplete: handleComplete,
     },
