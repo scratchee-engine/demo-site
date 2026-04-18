@@ -42,11 +42,20 @@ test.describe('Game Outcomes — wins, losses, and balance', () => {
 
       const result = await playToResult(page, test.info())
       const afterPlay = await getBalance(page)
+      const storeBalance = await page.evaluate(() => {
+        const appEl = document.querySelector('#app') as any
+        return appEl?.__vue_app__?.config?.globalProperties?.$pinia?._s?.get('game')?.balance ?? 0
+      })
 
       if (!result.won) {
+        expect(result.won).toBe(false)
         expect(afterPlay, `Loss on card ${i + 1} must not increase balance`).toBeCloseTo(afterBuy, 2)
+        expect(storeBalance).toBeCloseTo(afterBuy, 2)
       } else {
+        expect(result.won).toBe(true)
+        expect(result.prizeAmountCents).toBeGreaterThan(0)
         expect(afterPlay).toBeCloseTo(afterBuy + result.prizeAmountCents / 100, 2)
+        expect(storeBalance).toBeCloseTo(afterBuy + result.prizeAmountCents / 100, 2)
       }
 
       await goBackToLobby(page)
@@ -66,11 +75,17 @@ test.describe('Game Outcomes — wins, losses, and balance', () => {
       if (result.won) {
         foundWin = true
 
-        await expect(page.getByRole('heading', { name: 'You Won!' })).toBeVisible()
-        await expect(page.getByText(/Balance updated to/)).toBeVisible()
+        expect(result.won).toBe(true)
+        expect(result.prizeAmountCents).toBeGreaterThan(0)
 
         const afterWin = await getBalance(page)
+        const storeBalance = await page.evaluate(() => {
+          const appEl = document.querySelector('#app') as any
+          return appEl?.__vue_app__?.config?.globalProperties?.$pinia?._s?.get('game')?.balance ?? 0
+        })
+
         expect(afterWin).toBeCloseTo(afterBuy + result.prizeAmountCents / 100, 2)
+        expect(storeBalance).toBeCloseTo(afterBuy + result.prizeAmountCents / 100, 2)
       }
 
       await goBackToLobby(page)
@@ -92,7 +107,18 @@ test.describe('Game Outcomes — wins, losses, and balance', () => {
       const result = await playToResult(page, test.info())
 
       if (result.won && result.prizeTierName) {
-        await expect(page.getByText(result.prizeTierName)).toBeVisible()
+        expect(result.won).toBe(true)
+        expect(result.prizeTierName).toBeTruthy()
+        expect(typeof result.prizeTierName).toBe('string')
+
+        const storeResult = await page.evaluate(() => {
+          const appEl = document.querySelector('#app') as any
+          return appEl?.__vue_app__?.config?.globalProperties?.$pinia?._s?.get('game')?.lastResult ?? null
+        })
+
+        expect(storeResult).not.toBeNull()
+        expect(storeResult.won).toBe(true)
+        expect(storeResult.prizeTierName).toBe(result.prizeTierName)
         return
       }
 

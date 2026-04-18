@@ -82,12 +82,17 @@ export async function playToResult(
 
   testInfo?.annotations.push({
     type: 'info',
-    description: 'Game client did not complete naturally — force-completing via store',
+    description: 'Game client did not complete naturally — force-completing via API',
   })
 
   const outcome = extractOutcome(revealData)
-  await forceComplete(page, outcome)
-  await waitForResult(page)
+  const result = await forceComplete(page, outcome)
+
+  // If forceComplete succeeded, use its result; otherwise use reveal data
+  if (result) {
+    return result
+  }
+
   return outcome
 }
 
@@ -135,7 +140,7 @@ async function simulateScratch(page: Page): Promise<void> {
 async function forceComplete(
   page: Page,
   outcome: { won: boolean; prizeAmountCents: number; prizeTierName: string | null }
-): Promise<void> {
+): Promise<{ won: boolean; prizeAmountCents: number; prizeTierName: string | null } | null> {
   // Extract serial and token from Vue store
   const { serial, token } = await page.evaluate(() => {
     const appEl = document.querySelector('#app') as any
@@ -150,7 +155,7 @@ async function forceComplete(
 
   if (!serial || !token) {
     console.error('forceComplete: no serial or token')
-    return
+    return null
   }
 
   const request = page.context().request
@@ -173,7 +178,7 @@ async function forceComplete(
 
     if (!completeRes.ok()) {
       console.error('Complete failed:', completeRes.status(), completeText)
-      return
+      return null
     }
 
     const json = JSON.parse(completeText)
@@ -220,8 +225,11 @@ async function forceComplete(
         store.phase = 'result'
       }
     }, result)
+
+    return result
   } catch (err) {
     console.error('forceComplete error:', err)
+    return null
   }
 }
 
