@@ -184,13 +184,41 @@ async function forceComplete(
       prizeTierName: data.prize_tier_name ?? null
     }
 
-    // 3. Update Vue store with result
+    // 3. Update Vue store with result and force transition to result page
     await page.evaluate((r) => {
       const appEl = document.querySelector('#app') as any
       const app = appEl?.__vue_app__
       const pinia = app?.config?.globalProperties?.$pinia
       const store = pinia?._s?.get('game')
-      store?.completeCard?.(r.won, r.prizeAmountCents, r.prizeTierName)
+
+      // Set last result
+      if (store) {
+        store.lastResult = {
+          won: r.won,
+          prizeAmountCents: r.prizeAmountCents,
+          prizeTierName: r.prizeTierName
+        }
+
+        // Update balance if won
+        if (r.won) {
+          store.balance += r.prizeAmountCents / 100
+        }
+
+        // Add to history
+        if (store.currentCard) {
+          store.history.unshift({
+            won: r.won,
+            prizeAmountCents: r.prizeAmountCents,
+            modifiers: store.currentCard.modifiers
+          })
+          if (store.history.length > 3) {
+            store.history.pop()
+          }
+        }
+
+        // Force transition to result phase
+        store.phase = 'result'
+      }
     }, result)
   } catch (err) {
     console.error('forceComplete error:', err)
