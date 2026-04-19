@@ -43,7 +43,7 @@ test.describe('Deal Flow', () => {
     if (gamesJson.error) {
       // No games configured — test the error path
       await page.goto('/')
-      await expect(page.locator('.error-msg')).toBeVisible()
+      await expect(page.getByText(/error|failed|select a game/i)).toBeVisible()
     } else {
       test.skip()
     }

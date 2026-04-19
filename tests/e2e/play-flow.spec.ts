@@ -7,41 +7,37 @@ test.describe('Play Flow (structural, without real cards)', () => {
     // this confirms the guard works.
     await page.goto('/')
     // Lobby should be showing, not play
-    await expect(page.locator('.play')).not.toBeAttached()
-    await expect(page.locator('.game-mount')).not.toBeAttached()
+    await expect(page.getByText('Scratch your card')).not.toBeVisible()
   })
 
-  test('deal view shows dealing animation then card ready state', async ({ page }) => {
-    // Validates: Deal.vue transition from dealing → ready (mocked via route injection)
-    // We can't trigger a real deal without DEMO_GAMES, but we verify the
-    // component structure exists in the built bundle
+  test('lobby renders buy button (Vue bundle mounted)', async ({ page }) => {
+    // Validates: Vue app bundle loads and mounts successfully.
+    // If the bundle or any imported component failed to build/load,
+    // the Buy Card button would never appear.
     await page.goto('/')
-    const html = await page.content()
-    // The Vue app bundle should contain deal-related component code
-    expect(html).toContain('app')
+    await expect(page.getByRole('button', { name: /Buy Card/ })).toBeVisible({ timeout: 10_000 })
   })
 
   test('result view is not visible in initial state', async ({ page }) => {
     // Validates: Result.vue only renders in "result" phase
     await page.goto('/')
-    await expect(page.locator('.result')).not.toBeAttached()
-    await expect(page.locator('.result-win')).not.toBeAttached()
-    await expect(page.locator('.result-loss')).not.toBeAttached()
+    await expect(page.getByRole('heading', { name: 'You Won!' })).not.toBeVisible()
+    await expect(page.getByRole('heading', { name: 'No prize this time' })).not.toBeVisible()
   })
 
   test('game client script is bundled (Svelte import resolves)', async ({ page }) => {
     // Validates: @scratchee/game-client alias resolves in production build.
     // If the import failed, the entire Vue app would fail to mount.
-    await page.goto('/')
-    // App mounted successfully = Svelte game client import resolved at build time
-    await expect(page.locator('.site-header')).toBeVisible()
-
     const consoleErrors: string[] = []
     page.on('console', msg => {
       if (msg.type() === 'error') consoleErrors.push(msg.text())
     })
 
-    await page.waitForTimeout(1000)
+    await page.goto('/')
+    // App mounted successfully = Svelte game client import resolved at build time
+    await expect(page.locator('header')).toBeVisible()
+    await expect(page.getByRole('button', { name: /Buy Card/ })).toBeVisible({ timeout: 10_000 })
+
     const importErrors = consoleErrors.filter(
       e => e.includes('game-client') || e.includes('Failed to resolve')
     )

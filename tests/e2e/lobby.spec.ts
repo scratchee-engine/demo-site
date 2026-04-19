@@ -7,16 +7,15 @@ test.describe('Lobby', () => {
 
   test('lobby page loads with card offer UI', async ({ page }) => {
     // Validates: lobby phase renders the card offer section
-    await expect(page.locator('.card-offer')).toBeVisible()
-    await expect(page.locator('.offer-title')).toHaveText('Scratch Card')
-    await expect(page.locator('.offer-subtitle')).toBeVisible()
+    await expect(page.getByText('Scratch Card')).toBeVisible()
+    await expect(page.getByText('Match any winning number to win!')).toBeVisible()
   })
 
   test('lobby shows price and buy button', async ({ page }) => {
     // Validates: price display and primary action button are present
-    await expect(page.locator('.offer-price')).toHaveText('$5.00')
-    await expect(page.locator('.btn-primary')).toBeVisible()
-    await expect(page.locator('.btn-primary')).toContainText('Buy Card')
+    await expect(page.getByText('$5.00')).toBeVisible()
+    const buyBtn = page.getByRole('button', { name: /Buy Card/ })
+    await expect(buyBtn).toBeVisible()
   })
 
   test('game selector behaviour depends on DEMO_GAMES config', async ({ page }) => {
@@ -27,12 +26,13 @@ test.describe('Lobby', () => {
     const gamesJson = await gamesResponse.json()
 
     if (gamesJson.data && gamesJson.data.length > 0) {
-      await expect(page.locator('#game-select')).toBeVisible()
-      const options = page.locator('#game-select option')
+      const select = page.getByLabel(/Select a game/)
+      await expect(select).toBeVisible()
+      const options = select.locator('option')
       await expect(options).toHaveCount(gamesJson.data.length)
     } else {
       // No games configured — store.loadGames() sets error
-      await expect(page.locator('.error-msg')).toBeVisible()
+      await expect(page.getByText(/error|failed/i)).toBeVisible()
     }
   })
 
@@ -41,22 +41,24 @@ test.describe('Lobby', () => {
     const gamesResponse = await page.request.get('/proxy/games')
     const gamesJson = await gamesResponse.json()
 
+    const buyBtn = page.getByRole('button', { name: /Buy Card/ })
     if (gamesJson.data && gamesJson.data.length > 0) {
       // Auto-selects first game, so button should be enabled
-      await expect(page.locator('.btn-primary')).toBeEnabled()
+      await expect(buyBtn).toBeEnabled()
     } else {
       // No games — button disabled because no selectedGameId
-      await expect(page.locator('.btn-primary')).toBeDisabled()
+      await expect(buyBtn).toBeDisabled()
     }
   })
 
   test('starting balance is $50.00', async ({ page }) => {
     // Validates: STARTING_BALANCE constant (50) renders correctly
-    await expect(page.locator('.balance-amount')).toHaveText('$50.00')
+    const header = page.locator('header')
+    await expect(header.getByText('$50.00')).toBeVisible()
   })
 
   test('footer renders partner attribution', async ({ page }) => {
     // Validates: footer content is present
-    await expect(page.locator('.site-footer')).toContainText('Partner Integration Demo')
+    await expect(page.locator('footer')).toContainText('Partner Integration Demo')
   })
 })

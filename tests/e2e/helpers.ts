@@ -12,7 +12,7 @@ export async function getBalance(page: Page): Promise<number> {
 }
 
 export async function waitForGames(page: Page): Promise<void> {
-  const select = page.locator('#game-select')
+  const select = page.getByLabel(/Select a game/)
   await expect(select).toBeVisible({ timeout: 10_000 })
   const count = await select.locator('option').count()
   expect(count, 'At least one demo game must be configured via DEMO_GAMES env').toBeGreaterThan(0)
@@ -154,7 +154,6 @@ async function forceComplete(
   })
 
   if (!serial || !token) {
-    console.error('forceComplete: no serial or token')
     return null
   }
 
@@ -166,18 +165,15 @@ async function forceComplete(
     const revealRes = await request.post(`${baseURL}/proxy/reveal/${serial}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
-    const revealText = await revealRes.text()
-    console.log('REVEAL:', revealRes.status(), revealText)
+    await revealRes.text()
 
     // 2. Then complete (requires card in revealed state)
     const completeRes = await request.post(`${baseURL}/proxy/complete/${serial}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     })
     const completeText = await completeRes.text()
-    console.log('COMPLETE:', completeRes.status(), completeText)
 
     if (!completeRes.ok()) {
-      console.error('Complete failed:', completeRes.status(), completeText)
       return null
     }
 
@@ -227,8 +223,7 @@ async function forceComplete(
     }, result)
 
     return result
-  } catch (err) {
-    console.error('forceComplete error:', err)
+  } catch {
     return null
   }
 }

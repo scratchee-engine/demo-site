@@ -52,7 +52,7 @@ test.describe('Multi-game session', () => {
     const cycle1 = await fullPlayCycle(page, test.info())
     await expect(page.getByText('Recent plays')).toBeVisible()
 
-    const historySection = page.locator('.history-list, ul').filter({ hasText: /Win|No prize/ })
+    const historySection = page.locator('ul').filter({ hasText: /Win|No prize/ })
     const items = historySection.locator('li')
 
     if (cycle1.won) {

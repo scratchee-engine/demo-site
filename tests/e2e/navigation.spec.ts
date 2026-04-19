@@ -4,17 +4,18 @@ test.describe('Navigation + SPA Routing', () => {
   test('root path renders lobby phase', async ({ page }) => {
     // Validates: default route renders Lobby view (phase === "lobby")
     await page.goto('/')
-    await expect(page.locator('.card-offer')).toBeVisible()
+    await expect(page.getByRole('button', { name: /Buy Card/ })).toBeVisible()
     // No deal, play, or result views visible
-    await expect(page.locator('.deal')).not.toBeAttached()
-    await expect(page.locator('.play')).not.toBeAttached()
-    await expect(page.locator('.result')).not.toBeAttached()
+    await expect(page.getByRole('heading', { name: 'Your Card' })).not.toBeVisible()
+    await expect(page.getByText('Scratch your card')).not.toBeVisible()
+    await expect(page.getByRole('heading', { name: /You Won!|No prize this time/ })).not.toBeVisible()
   })
 
   test('arbitrary path serves SPA (no 404 from server)', async ({ page }) => {
     // Validates: server.ts catch-all serves index.html for client-side routing
     const res = await page.goto('/some/nonexistent/path')
     expect(res?.status()).toBe(200)
+    // App root mount present
     await expect(page.locator('#app')).toBeAttached()
   })
 

@@ -135,8 +135,9 @@ test.describe('Game Outcomes — wins, losses, and balance', () => {
     await buyCard(page)
     await playToResult(page, test.info())
 
-    const balanceLine = page.locator('.result').getByText(/Balance/)
-    await expect(balanceLine).toBeVisible()
+    // Result view shows a balance line ("Balance updated to …" for wins, "Balance: …" for losses)
+    const balanceLine = page.getByText(/Balance(?:\s+updated\s+to)?:?\s*\$\d+\.\d{2}/)
+    await expect(balanceLine.first()).toBeVisible()
 
     const headerBalance = await getBalance(page)
     const lineText = await balanceLine.textContent()
