@@ -11,8 +11,7 @@ const API_KEY = process.env.SCRATCHEE_API_KEY ?? ''
 const ALLOWED_ORIGIN = process.env.PROXY_ALLOWED_ORIGIN ?? 'http://localhost:5173'
 const PORT = parseInt(process.env.PORT ?? '5175', 10)
 
-// Parse comma-separated game IDs from env
-const DEMO_GAMES = (process.env.DEMO_GAMES ?? '').split(',').filter(g => g.trim()).map(g => g.trim())
+const DEMO_GAMES_OVERRIDE = (process.env.DEMO_GAMES ?? '').split(',').filter(g => g.trim()).map(g => g.trim())
 
 const app = new Hono()
 
@@ -125,13 +124,25 @@ app.post('/api/play/complete/:serial', async (c) => {
   })
 })
 
-app.get('/proxy/games', (c) => {
-  if (DEMO_GAMES.length === 0) {
-    return c.json({ error: 'No games configured. Set DEMO_GAMES env var.' }, 500)
+app.get('/proxy/games', async (c) => {
+  if (DEMO_GAMES_OVERRIDE.length > 0) {
+    return c.json({
+      data: DEMO_GAMES_OVERRIDE.map(id => ({ id, name: `Game ${id.slice(0, 8)}` }))
+    })
   }
-  return c.json({
-    data: DEMO_GAMES.map(id => ({ id, name: `Game ${id.slice(0, 8)}` }))
-  })
+
+  try {
+    const upstream = await fetch(`${API_URL}/api/integration/games`, {
+      headers: { 'Authorization': `Bearer ${API_KEY}` },
+    })
+    if (!upstream.ok) {
+      return c.json({ error: `Failed to fetch games (${upstream.status})` }, 502)
+    }
+    const body = await upstream.json()
+    return c.json(body)
+  } catch (err) {
+    return c.json({ error: 'Failed to reach API' }, 502)
+  }
 })
 
 app.get('/proxy/health', (c) => {
