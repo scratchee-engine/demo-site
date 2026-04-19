@@ -9,7 +9,7 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: {
-      '@scratchee/game-client': path.resolve(__dirname, '../game-client'),
+      '@scratchee/game-client': path.resolve(__dirname, '../game-client/dist/game-client.js'),
     },
   },
   server: {
