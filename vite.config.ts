@@ -15,7 +15,24 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/proxy': 'http://localhost:5175',
+      '/proxy': {
+        target: 'https://test-api.game.scratchee.com',
+        changeOrigin: true,
+        rewrite: (path) => {
+          // /proxy/deal → /api/integration/deal
+          // /proxy/play-token → /api/integration/play-token
+          // /proxy/games → /api/integration/games
+          if (path.match(/^\/proxy\/(deal|play-token|games)/)) {
+            return path.replace(/^\/proxy/, '/api/integration')
+          }
+          // /proxy/reveal/:serial → /api/play/reveal/:serial
+          // /proxy/complete/:serial → /api/play/complete/:serial
+          if (path.match(/^\/proxy\/(reveal|complete)/)) {
+            return path.replace(/^\/proxy/, '/api/play')
+          }
+          return path
+        },
+      },
     },
   },
 })
