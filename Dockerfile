@@ -19,10 +19,12 @@ COPY demo-site/package.json demo-site/package-lock.json ./
 RUN npm ci
 
 COPY demo-site/ ./
-# Copy game-client package (package.json + dist) for proper module resolution
+# Copy game-client package to a sibling of /app so the alias ../game-client resolves
+# AND link node_modules so svelte subpath imports resolve during bundling
 RUN mkdir -p /game-client
 COPY --from=game-client-builder /game/package.json /game-client/package.json
 COPY --from=game-client-builder /game/dist /game-client/dist
+RUN ln -s /app/node_modules /game-client/node_modules
 RUN npm run build
 
 FROM node:22-alpine
