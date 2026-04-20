@@ -21,13 +21,14 @@ export default defineConfig({
         changeOrigin: true,
         configure: (proxy) => {
           proxy.on('proxyReq', (proxyReq, req) => {
-            // Integration routes need the API key
-            if (req.url?.match(/^\/(proxy\/)?(deal|play-token|games)/)) {
+            // After rewrite, integration routes are /api/integration/*
+            // Play routes are /api/play/*
+            const path = proxyReq.path
+            if (path?.startsWith('/api/integration/')) {
               const apiKey = process.env.SCRATCHEE_API_KEY || 'sk_int_d3609da8d024cafa2d81cca8b30df5c8f24fa6735cce59cd7aa557715787185d'
               proxyReq.setHeader('Authorization', `Bearer ${apiKey}`)
             }
-            // Play routes (reveal, complete) pass through browser's Authorization header
-            // (already forwarded by Vite proxy)
+            // Play routes (/api/play/*) pass through browser's Authorization header
           })
         },
         rewrite: (path) => {
