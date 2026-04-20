@@ -1,3 +1,4 @@
+import 'dotenv/config'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import path from 'node:path'
@@ -18,6 +19,12 @@ export default defineConfig({
       '/proxy': {
         target: 'https://test-api.game.scratchee.com',
         changeOrigin: true,
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            const apiKey = process.env.SCRATCHEE_API_KEY || 'sk_int_d3609da8d024cafa2d81cca8b30df5c8f24fa6735cce59cd7aa557715787185d'
+            proxyReq.setHeader('Authorization', `Bearer ${apiKey}`)
+          })
+        },
         rewrite: (path) => {
           // /proxy/deal → /api/integration/deal
           // /proxy/play-token → /api/integration/play-token
