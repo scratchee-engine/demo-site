@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
-import { mount, unmount } from 'svelte'
 import { useGameStore } from '../stores/game'
 import GameClient from '@scratchee/game-client'
 import type { CompleteResult } from '@scratchee/game-client'
@@ -25,7 +24,7 @@ function handleComplete(result: CompleteResult) {
 onMounted(() => {
   const card = store.currentCard
   if (!containerRef.value || !card || !card.playToken || !card.cardData) return
-  svelteApp = mount(GameClient, {
+  svelteApp = GameClient.mount({
     target: containerRef.value,
     props: {
       serial: card.serial,
@@ -39,7 +38,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (svelteApp) {
-    unmount(svelteApp)
+    svelteApp.unmount()
     svelteApp = null
   }
 })
