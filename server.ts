@@ -149,13 +149,18 @@ app.get('/proxy/health', (c) => {
   return c.json({ status: 'ok' })
 })
 
-app.use('/assets/*', serveStatic({ root: './dist' }))
-app.use('/*', serveStatic({ root: './dist' }))
+// In production: serve static files from dist/
+// In dev: Vite handles the frontend on :5173, this server only handles /proxy routes
+const isDev = process.env.NODE_ENV !== 'production'
+if (!isDev) {
+  app.use('/assets/*', serveStatic({ root: './dist' }))
+  app.use('/*', serveStatic({ root: './dist' }))
 
-app.get('/*', (c) => {
-  const html = readFileSync(join(process.cwd(), 'dist', 'index.html'), 'utf-8')
-  return c.html(html)
-})
+  app.get('/*', (c) => {
+    const html = readFileSync(join(process.cwd(), 'dist', 'index.html'), 'utf-8')
+    return c.html(html)
+  })
+}
 
 serve({ fetch: app.fetch, port: PORT }, () => {
   console.log(`Demo site server running on http://localhost:${PORT}`)
