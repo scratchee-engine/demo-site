@@ -66,7 +66,7 @@ onMounted(() => {
           <span class="history-outcome">
             {{ entry.won ? `Win ${formatCurrency(entry.prizeAmountCents / 100)}` : 'No prize' }}
           </span>
-          <span class="history-modifiers">
+          <span v-if="entry.modifiers" class="history-modifiers">
             {{ entry.modifiers.theme.charAt(0).toUpperCase() + entry.modifiers.theme.slice(1) }}
             {{ artSymbols[entry.modifiers.art] }}
             {{ entry.modifiers.anim }}
