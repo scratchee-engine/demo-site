@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { Phase, CurrentCard, HistoryEntry, GameResult } from '../types'
-import { deal, getPlayToken, revealCard, randomModifiers } from '../api/client'
+import { deal, getPlayToken, revealCard } from '../api/client'
 
 const STARTING_BALANCE = 50
 const CARD_PRICE = 5
@@ -46,7 +46,6 @@ export const useGameStore = defineStore('game', () => {
         serial,
         playToken: null,
         cardData: null,
-        modifiers: randomModifiers(),
         isSecondChance: false,
       }
       phase.value = 'deal'
@@ -106,7 +105,6 @@ export const useGameStore = defineStore('game', () => {
         serial,
         playToken: null,
         cardData: null,
-        modifiers: randomModifiers(),
         isSecondChance: true,
       }
       phase.value = 'deal'

@@ -34,7 +34,7 @@ onMounted(() => {
 
       <div class="serial-line">Serial: <code>{{ store.currentCard.serial }}</code></div>
 
-      <ModifierPanel :modifiers="store.currentCard.modifiers" />
+      <ModifierPanel v-if="store.currentCard.modifiers" :modifiers="store.currentCard.modifiers" />
 
       <p v-if="store.error" class="error-msg">{{ store.error }}</p>
 

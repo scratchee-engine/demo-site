@@ -9,7 +9,7 @@ export interface CurrentCard {
   serial: string
   playToken: string | null
   cardData: any | null
-  modifiers: CardModifiers
+  modifiers?: CardModifiers
   isSecondChance: boolean
 }
 
@@ -22,7 +22,7 @@ export interface GameResult {
 export interface HistoryEntry {
   won: boolean
   prizeAmountCents: number
-  modifiers: CardModifiers
+  modifiers?: CardModifiers
 }
 
 export type Phase = 'lobby' | 'deal' | 'play' | 'result'
