@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { Phase, CurrentCard, HistoryEntry, GameResult } from '../types'
-import { deal, getPlayToken, revealCard } from '../api/client'
+import { deal, getPlayToken } from '../api/client'
 
 const STARTING_BALANCE = 50
 const CARD_PRICE = 5
@@ -63,8 +63,7 @@ export const useGameStore = defineStore('game', () => {
     error.value = null
     try {
       const { token } = await getPlayToken(currentCard.value.serial)
-      const cardData = await revealCard(currentCard.value.serial, token)
-      currentCard.value = { ...currentCard.value, playToken: token, cardData }
+      currentCard.value = { ...currentCard.value, playToken: token }
       phase.value = 'play'
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Could not start game. Try again.'

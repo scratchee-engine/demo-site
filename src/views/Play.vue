@@ -5,13 +5,37 @@ import { useGameStore } from '../stores/game'
 import GameClient from '@scratchee/game-client'
 
 const SCRATCHEE_API_URL = import.meta.env.VITE_SCRATCHEE_API_URL ?? ''
+const ASSET_PACK_ID = 'b3fffd00-78ef-4858-b438-2f03dd7565aa'
 
 const store = useGameStore()
 const containerRef = ref<HTMLElement | null>(null)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let svelteApp: any = null
 
-function handleComplete(result: { won: boolean; prizeAmountCents?: number; prizeTierName?: string | null }) {
+async function handleReveal() {
+  const card = store.currentCard
+  if (!card || !card.playToken) throw new Error('No card or play token')
+  const res = await fetch(`${SCRATCHEE_API_URL}/api/play/reveal/${card.serial}`, {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${card.playToken}` },
+  })
+  if (!res.ok) throw new Error(`Reveal failed (${res.status})`)
+  const json = await res.json()
+  return json.data
+}
+
+async function handleComplete(result: { won: boolean; prizeAmountCents?: number; prizeTierName?: string | null }) {
+  const card = store.currentCard
+  if (card && card.playToken) {
+    try {
+      await fetch(`${SCRATCHEE_API_URL}/api/play/complete/${card.serial}`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${card.playToken}` },
+      })
+    } catch (err) {
+      console.error('Complete API failed:', err)
+    }
+  }
   const prizeAmountCents = result.won
     ? (typeof result.prizeAmountCents === 'number' && isFinite(result.prizeAmountCents) && result.prizeAmountCents >= 0
         ? result.prizeAmountCents
@@ -21,16 +45,19 @@ function handleComplete(result: { won: boolean; prizeAmountCents?: number; prize
   store.completeCard(result.won, prizeAmountCents, prizeTierName)
 }
 
-onMounted(() => {
+onMounted(async () => {
   const card = store.currentCard
-  if (!containerRef.value || !card || !card.playToken || !card.cardData) return
+  if (!containerRef.value || !card || !card.playToken) return
+
+  const packRes = await fetch(`${SCRATCHEE_API_URL}/api/asset-packs/${ASSET_PACK_ID}/resolve`)
+  const packData = await packRes.json()
+
   svelteApp = mount(GameClient, {
     target: containerRef.value,
     props: {
       serial: card.serial,
-      token: card.playToken,
-      cardData: card.cardData,
-      api: SCRATCHEE_API_URL,
+      assetPack: packData.data,
+      onReveal: handleReveal,
       onComplete: handleComplete,
     },
   })
