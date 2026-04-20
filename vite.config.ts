@@ -8,6 +8,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig({
   plugins: [vue()],
+  optimizeDeps: {
+    include: ['svelte', 'svelte/internal/client']
+  },
   resolve: {
     alias: {
       '@scratchee/game-client': path.resolve(__dirname, '../game-client/dist/game-client.js'),

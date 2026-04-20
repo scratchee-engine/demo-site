@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { mount, unmount } from 'svelte'
 import { useGameStore } from '../stores/game'
 import GameClient from '@scratchee/game-client'
-import type { CompleteResult } from '@scratchee/game-client'
 
 const SCRATCHEE_API_URL = import.meta.env.VITE_SCRATCHEE_API_URL ?? ''
 
@@ -11,7 +11,7 @@ const containerRef = ref<HTMLElement | null>(null)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let svelteApp: any = null
 
-function handleComplete(result: CompleteResult) {
+function handleComplete(result: { won: boolean; prizeAmountCents?: number; prizeTierName?: string | null }) {
   const prizeAmountCents = result.won
     ? (typeof result.prizeAmountCents === 'number' && isFinite(result.prizeAmountCents) && result.prizeAmountCents >= 0
         ? result.prizeAmountCents
@@ -24,7 +24,7 @@ function handleComplete(result: CompleteResult) {
 onMounted(() => {
   const card = store.currentCard
   if (!containerRef.value || !card || !card.playToken || !card.cardData) return
-  svelteApp = GameClient.mount({
+  svelteApp = mount(GameClient, {
     target: containerRef.value,
     props: {
       serial: card.serial,
@@ -38,7 +38,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (svelteApp) {
-    svelteApp.unmount()
+    unmount(svelteApp)
     svelteApp = null
   }
 })
