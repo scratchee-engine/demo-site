@@ -20,9 +20,14 @@ export default defineConfig({
         target: 'https://test-api.game.scratchee.com',
         changeOrigin: true,
         configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq) => {
-            const apiKey = process.env.SCRATCHEE_API_KEY || 'sk_int_d3609da8d024cafa2d81cca8b30df5c8f24fa6735cce59cd7aa557715787185d'
-            proxyReq.setHeader('Authorization', `Bearer ${apiKey}`)
+          proxy.on('proxyReq', (proxyReq, req) => {
+            // Integration routes need the API key
+            if (req.url?.match(/^\/(proxy\/)?(deal|play-token|games)/)) {
+              const apiKey = process.env.SCRATCHEE_API_KEY || 'sk_int_d3609da8d024cafa2d81cca8b30df5c8f24fa6735cce59cd7aa557715787185d'
+              proxyReq.setHeader('Authorization', `Bearer ${apiKey}`)
+            }
+            // Play routes (reveal, complete) pass through browser's Authorization header
+            // (already forwarded by Vite proxy)
           })
         },
         rewrite: (path) => {
