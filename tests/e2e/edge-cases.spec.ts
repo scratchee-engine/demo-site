@@ -147,7 +147,7 @@ test.describe('Edge Cases', () => {
     const gamesRes = await page.request.get('/proxy/games')
     const gamesJson = await gamesRes.json()
 
-    if (gamesJson.data && gamesJson.data.length > 0) {
+    if (gamesJson.games && gamesJson.games.length > 0) {
       await page.evaluate(() => {
         const appEl = document.querySelector('#app') as any
         const store = appEl?.__vue_app__?.config?.globalProperties?.$pinia?._s?.get('game')

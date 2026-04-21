@@ -25,8 +25,8 @@ export async function deal(gameId: string): Promise<{ serial: string }> {
     body: JSON.stringify({ game_id: gameId, count: 1 }),
   })
   if (!res.ok) throw new Error(`Deal failed (${res.status})`)
-  const json = await res.json() as { data: { cards: Array<{ serial: string }> } }
-  return { serial: json.data.cards[0].serial }
+  const json = await res.json() as { cards: Array<{ serial: string }> }
+  return { serial: json.cards[0].serial }
 }
 
 export async function getPlayToken(cardSerial: string): Promise<{ token: string }> {
@@ -36,8 +36,8 @@ export async function getPlayToken(cardSerial: string): Promise<{ token: string 
     body: JSON.stringify({ card_serial: cardSerial }),
   })
   if (!res.ok) throw new Error(`Play token failed (${res.status})`)
-  const json = await res.json() as { data: { token: string } }
-  return { token: json.data.token }
+  const json = await res.json() as { token: string }
+  return { token: json.token }
 }
 
 export async function revealCard(cardSerial: string, playToken: string): Promise<any> {

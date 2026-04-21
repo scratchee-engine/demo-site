@@ -25,11 +25,11 @@ test.describe('Lobby', () => {
     const gamesResponse = await page.request.get('/proxy/games')
     const gamesJson = await gamesResponse.json()
 
-    if (gamesJson.data && gamesJson.data.length > 0) {
+    if (gamesJson.games && gamesJson.games.length > 0) {
       const select = page.getByLabel(/Select a game/)
       await expect(select).toBeVisible()
       const options = select.locator('option')
-      await expect(options).toHaveCount(gamesJson.data.length)
+      await expect(options).toHaveCount(gamesJson.games.length)
     } else {
       // No games configured — store.loadGames() sets error
       await expect(page.getByText(/error|failed/i)).toBeVisible()
@@ -42,7 +42,7 @@ test.describe('Lobby', () => {
     const gamesJson = await gamesResponse.json()
 
     const buyBtn = page.getByRole('button', { name: /Buy Card/ })
-    if (gamesJson.data && gamesJson.data.length > 0) {
+    if (gamesJson.games && gamesJson.games.length > 0) {
       // Auto-selects first game, so button should be enabled
       await expect(buyBtn).toBeEnabled()
     } else {

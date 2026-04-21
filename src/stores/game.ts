@@ -22,10 +22,10 @@ export const useGameStore = defineStore('game', () => {
     try {
       const res = await fetch('/proxy/games')
       if (!res.ok) throw new Error('Failed to load games')
-      const json = await res.json() as { data: Array<{ id: string; name: string }> }
-      availableGames.value = json.data
-      if (json.data.length > 0 && !selectedGameId.value) {
-        selectedGameId.value = json.data[0].id
+      const json = await res.json() as { games: Array<{ id: string; name: string }> }
+      availableGames.value = json.games
+      if (json.games.length > 0 && !selectedGameId.value) {
+        selectedGameId.value = json.games[0].id
       }
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Could not load games'
