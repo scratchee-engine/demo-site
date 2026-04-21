@@ -127,7 +127,7 @@ app.post('/api/play/complete/:serial', async (c) => {
 app.get('/proxy/games', async (c) => {
   if (DEMO_GAMES_OVERRIDE.length > 0) {
     return c.json({
-      data: DEMO_GAMES_OVERRIDE.map(id => ({ id, name: `Game ${id.slice(0, 8)}` }))
+      games: DEMO_GAMES_OVERRIDE.map(id => ({ id, name: `Game ${id.slice(0, 8)}` }))
     })
   }
 
